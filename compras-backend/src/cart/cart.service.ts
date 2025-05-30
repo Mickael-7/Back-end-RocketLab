@@ -40,11 +40,24 @@ export class CartService {
     return this.cartRepository.remove(cart);
   }
 
-  async checkout(id: number) {
-    const cart = await this.findOne(id);
-    if (!cart) {
-      throw new NotFoundException('Carrinho não encontrado');
+async checkout(id: number) {
+  const cart = await this.findOne(id);
+  if (!cart) {
+    throw new NotFoundException('Carrinho não encontrado');
+  }
+
+  for (const product of cart.products) {
+    const dbProduct = await this.productRepository.findOne({ where: { id: product.id } });
+    if (!dbProduct) {
+      throw new NotFoundException(`Produto com id ${product.id} não encontrado`);
     }
+    if (dbProduct.stock <= 0) {
+      throw new Error(`Produto ${dbProduct.name} está sem estoque`);
+    }
+    dbProduct.stock -= 1;
+    await this.productRepository.save(dbProduct);
+  }
+
     await this.cartRepository.remove(cart);
     return { message: 'Compra finalizada com sucesso!', total: cart.total };
   }
