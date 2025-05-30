@@ -27,5 +27,5 @@ Este é um projeto backend desenvolvido com NestJS, TypeScript e SQLite, que per
 - npm install
 3. Execute a aplicação:
 - npm run start
-- A aplicação ficará disponível em:
-  - http://localhost:3000
+- A aplicação ficará disponível no swagger em:
+  - http://localhost:3000/api
