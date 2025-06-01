@@ -4,6 +4,7 @@ import { Cart } from './cart.entity';
 import { Repository } from 'typeorm';
 import { Product } from 'src/products/product.entity';
 import { CreateCartDto } from './create-cart.dto';
+import { UpdateCartDto } from './update-cart.dto';
 
 
 @Injectable()
@@ -39,26 +40,51 @@ export class CartService {
     }
     return this.cartRepository.remove(cart);
   }
-
-async checkout(id: number) {
-  const cart = await this.findOne(id);
-  if (!cart) {
-    throw new NotFoundException('Carrinho não encontrado');
-  }
-
-  for (const product of cart.products) {
-    const dbProduct = await this.productRepository.findOne({ where: { id: product.id } });
-    if (!dbProduct) {
-      throw new NotFoundException(`Produto com id ${product.id} não encontrado`);
+  async update(id: number, updateCartDto: UpdateCartDto) {
+    const cart = await this.findOne(id);
+    if (!cart) {
+      throw new NotFoundException('Carrinho não encontrado');
     }
-    if (dbProduct.stock <= 0) {
-      throw new Error(`Produto ${dbProduct.name} está sem estoque`);
+
+    // Find the new products from the database
+    if (!updateCartDto.productIds || !Array.isArray(updateCartDto.productIds)) {
+        throw new NotFoundException('Nenhum produto informado para atualização');
     }
-    dbProduct.stock -= 1;
-    await this.productRepository.save(dbProduct);
+    const products = await this.productRepository.findByIds(updateCartDto.productIds);
+    if (products.length !== updateCartDto.productIds.length) {
+        throw new NotFoundException('Um ou mais produtos não foram encontrados');
+    }
+    
+    // Recalculate the total
+    const total = products.reduce((sum, product) => sum + Number(product.price), 0);
+
+    // Assign the new products and total to the cart
+    cart.products = products;
+    cart.total = total;
+
+    // Save the updated cart
+    return this.cartRepository.save(cart);
   }
 
-    await this.cartRepository.remove(cart);
-    return { message: 'Compra finalizada com sucesso!', total: cart.total };
-  }
+  async checkout(id: number) {
+    const cart = await this.findOne(id);
+    if (!cart) {
+      throw new NotFoundException('Carrinho não encontrado');
+    }
+
+    for (const product of cart.products) {
+      const dbProduct = await this.productRepository.findOne({ where: { id: product.id } });
+      if (!dbProduct) {
+        throw new NotFoundException(`Produto com id ${product.id} não encontrado`);
+      }
+      if (dbProduct.stock <= 0) {
+        throw new Error(`Produto ${dbProduct.name} está sem estoque`);
+      }
+      dbProduct.stock -= 1;
+      await this.productRepository.save(dbProduct);
+    }
+
+      await this.cartRepository.remove(cart);
+      return { message: 'Compra finalizada com sucesso!', total: cart.total };
+    }
 }
