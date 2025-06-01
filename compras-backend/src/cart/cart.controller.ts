@@ -34,7 +34,7 @@ export class CartController {
   remove(@Param('id') id: string) {
     return this.cartService.remove(+id);
   }
-    // 👇 ADD THIS UPDATE ENDPOINT
+
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um carrinho por ID' })
   @ApiBody({ type: UpdateCartDto })

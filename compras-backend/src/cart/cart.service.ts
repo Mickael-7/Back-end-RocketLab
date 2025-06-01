@@ -46,7 +46,6 @@ export class CartService {
       throw new NotFoundException('Carrinho não encontrado');
     }
 
-    // Find the new products from the database
     if (!updateCartDto.productIds || !Array.isArray(updateCartDto.productIds)) {
         throw new NotFoundException('Nenhum produto informado para atualização');
     }
@@ -55,14 +54,12 @@ export class CartService {
         throw new NotFoundException('Um ou mais produtos não foram encontrados');
     }
     
-    // Recalculate the total
     const total = products.reduce((sum, product) => sum + Number(product.price), 0);
 
-    // Assign the new products and total to the cart
     cart.products = products;
     cart.total = total;
 
-    // Save the updated cart
+
     return this.cartRepository.save(cart);
   }
 
